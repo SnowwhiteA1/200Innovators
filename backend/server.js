@@ -8,11 +8,6 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json()); // Allows JSON data
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("✅ Server is running...");
-});
-
 // Register API
 app.post("/register", (req, res) => {
   console.log("📥 Request received from frontend");
