@@ -1,62 +1,72 @@
 const express = require("express");
 const cors = require("cors");
+const mysql = require("mysql2");
 
 const app = express();
 const PORT = 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // Allows JSON data
+app.use(express.json());
 
-// Register API
+// 🔗 MySQL connection
+const db = mysql.createConnection({
+  host: "localhost",
+  user: "root",       // default MySQL user
+  password: "WaronaMak@01",       // put your MySQL password if you set one
+  database: "online_store"
+});
+
+// Test DB connection
+db.connect((err) => {
+  if (err) {
+    console.error("❌ Database connection failed:", err);
+  } else {
+    console.log("✅ Connected to MySQL database");
+  }
+});
+
+// ---------------- REGISTER API ----------------
 app.post("/register", (req, res) => {
-  console.log("📥 Request received from frontend");
+  console.log("📥 Request received");
 
   const { name, sirname, email, password } = req.body;
-  console.log("📦 Data received:", req.body);
 
-  // 1️⃣ Validation: empty fields
+  // 1️⃣ Validation
   if (!name || !sirname || !email || !password) {
-    console.log("❌ Validation failed: Missing fields");
-    return res.status(400).json({
-      message: "All fields are required"
-    });
+    return res.status(400).json({ message: "All fields are required" });
   }
 
-  // 2️⃣ Email validation
   if (!email.includes("@")) {
-    console.log("❌ Validation failed: Invalid email");
-    return res.status(400).json({
-      message: "Invalid email address"
-    });
+    return res.status(400).json({ message: "Invalid email address" });
   }
 
-  // 3️⃣ Password validation
   if (password.length < 6) {
-    console.log("❌ Validation failed: Weak password");
-    return res.status(400).json({
-      message: "Password must be at least 6 characters"
-    });
+    return res.status(400).json({ message: "Password must be at least 6 characters" });
   }
 
-  // 4️⃣ Simulated save (database later)
-  const newUser = {
-    id: Date.now(),
-    name,
-    sirname,
-    email
-  };
+  // 2️⃣ Insert into database
+  const sql = `
+    INSERT INTO users (name, sirname, email, password)
+    VALUES (?, ?, ?, ?)
+  `;
 
-  console.log("✅ User registered successfully:", newUser);
+  db.query(sql, [name, sirname, email, password], (err, result) => {
+    if (err) {
+      console.error("❌ Error saving user:", err);
+      return res.status(500).json({ message: "Database error" });
+    }
 
-  // 5️⃣ Success response
-  res.status(201).json({
-    message: "Registration successful",
-    user: newUser
+    console.log("✅ User saved to database, ID:", result.insertId);
+
+    res.status(201).json({
+      message: "Registration successful",
+      userId: result.insertId
+    });
   });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
